@@ -9,7 +9,7 @@ import HomePage from '@/components/HomePage';
 import GameCreator from '@/components/GameCreator';
 import GamePlayer from '@/components/GamePlayer';
 import Rankings from '@/components/Rankings';
-import Auth from '@/components/Auth'; // <-- MUDANÇA: Importa o novo componente
+import Auth from '@/components/Auth';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -19,24 +19,41 @@ function App() {
   const [selectedGame, setSelectedGame] = useState(null);
   const { toast } = useToast();
 
+  // ALTERAÇÃO 1: Busca os jogos da API ao carregar o app
   useEffect(() => {
-    const savedGames = localStorage.getItem('educationalGames');
+    // Função para buscar os jogos da nossa API
+    const fetchGames = async () => {
+        try {
+            const response = await fetch('http://localhost:3001/api/games');
+            if (!response.ok) {
+                throw new Error('Falha na resposta da rede');
+            }
+            const data = await response.json();
+            setGames(data); // Atualiza o estado com os jogos do banco
+        } catch (error) {
+            console.error("Erro ao buscar jogos:", error);
+            toast({ title: "Erro de Rede", description: "Não foi possível carregar os jogos do servidor.", variant: "destructive" });
+        }
+    };
+
+    fetchGames(); // Chama a função
+
+    // Lógica para carregar jogador e resultados continua igual por enquanto
     const savedResults = localStorage.getItem('gameResults');
     const savedPlayer = localStorage.getItem('currentPlayer');
 
-    if (savedGames) setGames(JSON.parse(savedGames));
     if (savedResults) setGameResults(JSON.parse(savedResults));
     if (savedPlayer) setCurrentPlayer(JSON.parse(savedPlayer));
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('educationalGames', JSON.stringify(games));
-  }, [games]);
+  // O useEffect que salvava jogos no localStorage foi REMOVIDO.
 
+  // Este useEffect para resultados pode continuar por enquanto
   useEffect(() => {
     localStorage.setItem('gameResults', JSON.stringify(gameResults));
   }, [gameResults]);
 
+  // Este useEffect para o jogador atual está correto
   useEffect(() => {
     if (currentPlayer) {
       localStorage.setItem('currentPlayer', JSON.stringify(currentPlayer));
@@ -46,19 +63,46 @@ function App() {
     }
   }, [currentPlayer]);
 
-  const handleCreateGame = (gameData) => {
-    const newGame = {
-      id: Date.now().toString(),
-      ...gameData,
-      createdAt: new Date().toISOString(),
-      createdBy: currentPlayer?.name || 'Anônimo',
-    };
-    setGames([...games, newGame]);
-    toast({ title: "Jogo criado!", description: `O jogo "${gameData.title}" foi adicionado.` });
-    setCurrentView('home');
+
+  // ALTERAÇÃO 2: Salva o novo jogo via API
+  const handleCreateGame = async (gameData) => {
+    if (!currentPlayer) {
+        toast({ title: "Acesso Negado", description: "Você precisa estar logado para criar um jogo.", variant: "destructive" });
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3001/api/games', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...gameData,
+                createdBy: currentPlayer.name 
+            })
+        });
+
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.message || 'Erro ao salvar o jogo');
+        }
+
+        const newGameFromDB = await response.json();
+        
+        setGames(prevGames => [newGameFromDB, ...prevGames]); 
+        
+        toast({
+            title: "Jogo criado!",
+            description: `O jogo "${gameData.title}" foi salvo com sucesso.`
+        });
+        setCurrentView('home');
+
+    } catch (error) {
+        console.error("Erro ao criar jogo:", error);
+        toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
   };
 
-  // MUDANÇA: Atualizamos esta função
+  // Nenhuma mudança necessária aqui
   const handlePlayGame = (game) => {
     if (!currentPlayer) {
       setSelectedGame(game);
@@ -69,6 +113,7 @@ function App() {
     setCurrentView('play');
   };
   
+  // Nenhuma mudança necessária aqui por enquanto
   const handleGameComplete = (result) => {
     const gameResult = {
       id: Date.now().toString(),
@@ -88,7 +133,7 @@ function App() {
     setSelectedGame(null);
   };
 
-  // MUDANÇA: Esta função é nova
+  // Nenhuma mudança necessária aqui
   const handleAuthSuccess = (playerData) => {
     setCurrentPlayer(playerData);
     if (selectedGame) {
@@ -184,7 +229,6 @@ function App() {
               />
             )}
             
-            {/* MUDANÇA: Renderiza nosso novo componente Auth */}
             {currentView === 'auth' && (
               <Auth 
                 onAuthSuccess={handleAuthSuccess}

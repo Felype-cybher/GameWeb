@@ -9,6 +9,16 @@ const port = 3001; // porta do backend
 app.use(cors()); // libera requisições do frontend
 app.use(express.json());
 
+// DENTRO DE backend/server.js
+
+app.use(express.json());
+
+// ADICIONE ESTAS DUAS LINHAS AQUI:
+const gameRoutes = require('./routes/games');
+app.use('/api/games', gameRoutes);
+
+// O resto do seu código de login/cadastro continua abaixo...
+
 const uri = "mongodb+srv://Felype:4vGlzhWyQtIZgpRP@users.hbssqfi.mongodb.net/?retryWrites=true&w=majority&appName=Users";
 const client = new MongoClient(uri);
 let usersCollection;
