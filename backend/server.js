@@ -1,70 +1,53 @@
 const express = require("express");
 const cors = require("cors");
-const bcrypt = require("bcrypt");
 const { MongoClient } = require("mongodb");
+require('dotenv').config();
 
 const app = express();
-const port = 3001; // porta do backend
+const port = 3001;
 
-app.use(cors()); // libera requisições do frontend
+// Middlewares
+app.use(cors());
 app.use(express.json());
 
-// DENTRO DE backend/server.js
-
-app.use(express.json());
-
-// ADICIONE ESTAS DUAS LINHAS AQUI:
-const gameRoutes = require('./routes/games');
-app.use('/api/games', gameRoutes);
-
-// O resto do seu código de login/cadastro continua abaixo...
-
-const uri = "mongodb+srv://Felype:4vGlzhWyQtIZgpRP@users.hbssqfi.mongodb.net/?retryWrites=true&w=majority&appName=Users";
+// --- Conexão com o Banco de Dados e Inicialização do Servidor ---
+const uri = process.env.MONGO_URI;
+if (!uri) {
+    console.error("❌ Erro: A variável MONGO_URI não está definida no arquivo .env");
+    process.exit(1);
+}
 const client = new MongoClient(uri);
-let usersCollection;
 
-client.connect().then(() => {
-    const db = client.db("meuBanco");
-    usersCollection = db.collection("usuarios");
-    console.log("✅ Conectado ao MongoDB e pronto para cadastrar/logar usuários");
-});
+async function startServer() {
+    try {
+        // 1. Conecta ao banco de dados
+        await client.connect();
+        const db = client.db("meuBanco");
+        console.log("✅ Conectado ao MongoDB com sucesso!");
 
-// Rota de cadastro
-app.post("/cadastro", async (req, res) => {
-    const { nome, email, senha } = req.body;
+        // 2. Disponibiliza as coleções para todas as rotas da aplicação
+        app.locals.usersCollection = db.collection("usuarios");
+        app.locals.gamesCollection = db.collection("games");
+        app.locals.resultsCollection = db.collection("results");
 
-    const usuarioExistente = await usersCollection.findOne({ email });
-    if (usuarioExistente) {
-        return res.status(400).json({ mensagem: "Email já cadastrado." });
+        // 3. Configura as rotas DEPOIS que a conexão está estabelecida
+        const authRoutes = require('./routes/auth');
+        const gameRoutes = require('./routes/games');
+
+        app.use('/auth', authRoutes); // Rotas de autenticação (ex: /auth/login)
+        app.use('/api/games', gameRoutes); // Rotas de jogos
+
+        // 4. Inicia o servidor para ouvir as requisições
+        app.listen(port, () => {
+            console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+        });
+
+    } catch (e) {
+        console.error("❌ Falha fatal ao conectar ao MongoDB ou iniciar o servidor.", e);
+        await client.close(); // Garante que a conexão seja fechada em caso de erro
+        process.exit(1);
     }
+}
 
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
-    await usersCollection.insertOne({ nome, email, senha: senhaCriptografada });
-
-    res.status(201).json({ mensagem: "Usuário cadastrado com sucesso!" });
-});
-
-// Rota de login
-app.post("/login", async (req, res) => {
-    const { email, senha } = req.body;
-
-    const usuario = await usersCollection.findOne({ email });
-    if (!usuario) {
-        return res.status(400).json({ mensagem: "Usuário não encontrado." });
-    }
-
-    const senhaConfere = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaConfere) {
-        return res.status(401).json({ mensagem: "Senha incorreta." });
-    }
-
-    res.status(200).json({ mensagem: "Login bem-sucedido!" });
-});
-
-app.get("/", (req, res) => {
-    res.send("Bem-vindo à API de Cadastro e Login!");
-});
-
-app.listen(port, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
-});
+// Inicia todo o processo
+startServer();
