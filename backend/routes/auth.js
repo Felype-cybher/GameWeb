@@ -56,4 +56,45 @@ router.post("/login", async (req, res) => {
     }
 });
 
+// ... suas rotas de register e login existentes ...
+
+const authMiddleware = require('../verificarToken'); // Importa o nosso verificador
+const { ObjectId } = require('mongodb'); // Importante para buscar pelo ID
+
+// ROTA PARA MUDAR A SENHA (POST /auth/change-password)
+// Note que passamos `authMiddleware` antes da lógica da rota. Isso a protege.
+router.post('/change-password', authMiddleware, async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const usersCollection = req.app.locals.usersCollection;
+    const userId = req.user.id; // Pegamos o ID do usuário que o middleware decodificou do token
+
+    try {
+        const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
+        }
+
+        // Verifica se a senha antiga fornecida está correta
+        const isMatch = await bcrypt.compare(oldPassword, user.senha);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Senha antiga incorreta.' });
+        }
+
+        // Criptografa a nova senha e atualiza no banco de dados
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await usersCollection.updateOne(
+            { _id: new ObjectId(userId) },
+            { $set: { senha: hashedNewPassword } }
+        );
+
+        res.json({ message: 'Senha alterada com sucesso!' });
+
+    } catch (error) {
+        console.error("Erro ao alterar senha:", error);
+        res.status(500).json({ message: 'Erro no servidor ao alterar a senha.' });
+    }
+});
+
+
 module.exports = router;
+
