@@ -62,7 +62,7 @@ const TermsDefinitionsForm = ({ termsAndDefinitions, setTermsAndDefinitions }) =
                 type="text"
                 value={pair.term}
                 onChange={(e) => updatePair(index, 'term', e.target.value)}
-                placeholder="Ex: HTML"
+                placeholder="Ex: Termo"
                 className="w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
               />
             </div>
@@ -74,7 +74,7 @@ const TermsDefinitionsForm = ({ termsAndDefinitions, setTermsAndDefinitions }) =
                 type="text"
                 value={pair.definition}
                 onChange={(e) => updatePair(index, 'definition', e.target.value)}
-                placeholder="Ex: Linguagem de Marcação"
+                placeholder="Ex: Definição do termo"
                 className="w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
               />
             </div>
