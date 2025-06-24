@@ -71,7 +71,7 @@ Siga os passos abaixo para executar o projeto em sua máquina.
 ### 1. Clonar o Repositório
 
 ```bash
-git clone [https://github.com/Felype-cybher/GameWeb.git](https://github.com/Felype-cybher/GameWeb.git)
+git clone https://github.com/Felype-cybher/GameWeb.git
 cd GameWeb
 ```
 
