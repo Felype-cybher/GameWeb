@@ -12,7 +12,7 @@ Abaixo, uma visão geral da página principal da aplicação após o login do us
 
 Esta aplicação foi desenvolvida como projeto para a disciplina de Programação Web, visando criar uma plataforma interativa e funcional. O sistema permite que usuários se cadastrem, criem seus próprios jogos baseados em "Termos e Definições" e "Itens e Categorias", e joguem os games disponíveis.
 
-O projeto foi construído com uma arquitetura moderna, separando o **backend** (API RESTful em Node.js) do **frontend** (Single Page Application em React), e utiliza um banco de dados **MongoDB** para persistir todos os dados de usuários, jogos e resultados.
+O projeto foi construído com uma arquitetura moderna, separando o **backend** do **frontend**, e utiliza um banco de dados **MongoDB** para persistir todos os dados de usuários, jogos e resultados.
 
 ---
 
