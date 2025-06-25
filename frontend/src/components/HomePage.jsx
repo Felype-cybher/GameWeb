@@ -1,23 +1,24 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { 
-  Play, Plus, Brain, Target, Shuffle, Clock, User, Trophy, Lightbulb
+  Play, Plus, Brain, Target, Shuffle, Clock, User, Trophy, Lightbulb, Share2
 } from 'lucide-react';
 
 const HomePage = ({ games, onPlayGame, onCreateGame, currentPlayer }) => {
-  const gameTypeIcons = {
-    association: Lightbulb,
-    memory: Brain,
-    quiz: Target,
-    dragdrop: Shuffle
+  const { toast } = useToast();
+
+  const handleShare = (gameId) => {
+    const link = `${window.location.origin}/jogar/${gameId}`;
+    navigator.clipboard.writeText(link).then(() => {
+        toast({ title: "Link Copiado!", description: "O link para o jogo foi copiado." });
+    }).catch(err => {
+        toast({ title: "Erro", description: "Não foi possível copiar o link.", variant: "destructive" });
+    });
   };
 
-  const gameTypeLabels = {
-    association: 'Associação',
-    memory: 'Jogo da Memória',
-    quiz: 'Quiz',
-    dragdrop: 'Arrastar e Soltar'
-  };
+  const gameTypeIcons = { association: Lightbulb, memory: Brain, quiz: Target };
+  const gameTypeLabels = { association: 'Associação', memory: 'Jogo da Memória', quiz: 'Quiz' };
 
   return (
     <div className="space-y-6">
@@ -33,24 +34,20 @@ const HomePage = ({ games, onPlayGame, onCreateGame, currentPlayer }) => {
           Criar Novo Jogo
         </Button>
       </div>
-
       <div>
         <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
           <Trophy className="h-6 w-6 mr-2 text-yellow-500" />
           Jogos Disponíveis ({games.length})
         </h3>
-        
         {games.length === 0 ? (
           <div className="bg-white rounded-lg p-8 text-center shadow">
             <h4 className="text-lg font-medium text-gray-700 mb-1">Nenhum jogo por aqui...</h4>
-            <p className="text-gray-500 mb-4 text-sm">Seja o primeiro a criar um!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {games.map((game) => {
               const IconComponent = gameTypeIcons[game.gameType];
               const label = gameTypeLabels[game.gameType];
-              
               return (
                 <div key={game._id} className="bg-white rounded-lg p-4 shadow hover:shadow-lg flex flex-col justify-between">
                   <div>
@@ -69,10 +66,16 @@ const HomePage = ({ games, onPlayGame, onCreateGame, currentPlayer }) => {
                       <div className="flex items-center"><Clock className="h-3 w-3 mr-1" /><span>{new Date(game.createdAt).toLocaleDateString()}</span></div>
                     </div>
                   </div>
-                  <Button onClick={() => onPlayGame(game)} className="w-full mt-2 bg-green-500 hover:bg-green-600 text-white">
-                    <Play className="h-4 w-4 mr-1" />
-                    Jogar
-                  </Button>
+                  <div className="flex flex-col space-y-2 mt-4">
+                    <Button onClick={() => onPlayGame(game)} className="w-full bg-green-500 hover:bg-green-600 text-white">
+                      <Play className="h-4 w-4 mr-1" />
+                      Jogar
+                    </Button>
+                    <Button onClick={() => handleShare(game._id)} variant="outline" size="sm" className="w-full text-xs">
+                      <Share2 className="h-3 w-3 mr-1" />
+                      Compartilhar
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -84,3 +87,4 @@ const HomePage = ({ games, onPlayGame, onCreateGame, currentPlayer }) => {
 };
 
 export default HomePage;
+//             setCurrentView('home');

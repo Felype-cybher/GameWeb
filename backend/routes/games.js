@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const Game = require('../models/Game');
 const { ObjectId } = require('mongodb');
 
 // ROTA PARA BUSCAR TODOS OS JOGOS
@@ -28,6 +27,25 @@ router.post('/', async (req, res) => {
         res.status(400).json({ message: "Erro ao salvar o jogo no banco de dados." });
     }
 });
+
+// ROTA PARA BUSCAR UM JOGO ESPECÍFICO PELO ID
+router.get('/:id', async (req, res) => {
+    const gamesCollection = req.app.locals.gamesCollection;
+    try {
+        const { id } = req.params;
+        if (!ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'ID do jogo inválido.' });
+        }
+        const game = await gamesCollection.findOne({ _id: new ObjectId(id) });
+        if (!game) {
+            return res.status(404).json({ message: 'Jogo não encontrado.' });
+        }
+        res.json(game);
+    } catch (err) {
+        res.status(500).json({ message: 'Erro no servidor ao buscar o jogo.' });
+    }
+});
+
 
 // ROTA PARA SALVAR O RESULTADO DE UMA PARTIDA
 router.post('/:gameId/results', async (req, res) => {
