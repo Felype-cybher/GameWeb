@@ -8,7 +8,7 @@ Abaixo, uma visão geral da página principal da aplicação após o login do us
 
 ![Tela Inicial do Projeto de Jogos](telainicial.png)
 
-## 📝 Descrição do Projeto
+##  Descrição do Projeto
 
 Esta aplicação foi desenvolvida como projeto para a disciplina de Programação Web, visando criar uma plataforma interativa e funcional. O sistema permite que usuários se cadastrem, criem seus próprios jogos baseados em "Termos e Definições" e "Itens e Categorias", e joguem os games disponíveis.
 
