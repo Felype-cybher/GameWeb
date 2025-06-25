@@ -9,17 +9,44 @@ const Rankings = ({ results, games }) => {
   const filteredResults = useMemo(() => {
     let filtered = results;
     if (selectedGame !== 'all') {
-      // CORREÇÃO: Filtra pelo ID do jogo que agora vem dentro de cada resultado
       filtered = results.filter(result => result.gameId === selectedGame);
     }
-    // A lógica de ordenação continua a mesma
+    
+    // --- LÓGICA DE ORDENAÇÃO CORRIGIDA ---
     return [...filtered].sort((a, b) => {
-      if (sortBy === 'score') return b.score - a.score;
-      if (sortBy === 'time') return a.timeSpent - b.timeSpent;
-      const accA = a.totalQuestions > 0 ? (a.correctAnswers / a.totalQuestions) * 100 : 0;
-      const accB = b.totalQuestions > 0 ? (b.correctAnswers / b.totalQuestions) * 100 : 0;
-      if (sortBy === 'accuracy') return accB - accA;
-      return b.score - a.score;
+      // Ordenando por Pontos (critério principal)
+      if (sortBy === 'score') {
+        // 1. Compara os pontos. Se forem diferentes, ordena por pontos.
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        // 2. Se os pontos forem iguais, usa o TEMPO como desempate (menor tempo é melhor).
+        return a.timeSpent - b.timeSpent;
+      }
+      
+      // Ordenando por Tempo (menor tempo é melhor)
+      if (sortBy === 'time') {
+         // 1. Compara o tempo. Se for diferente, ordena por tempo.
+        if (a.timeSpent !== b.timeSpent) {
+            return a.timeSpent - b.timeSpent;
+        }
+        // 2. Se o tempo for igual, usa a PONTUAÇÃO como desempate.
+        return b.score - a.score;
+      }
+      
+      // Ordenando por Precisão
+      if (sortBy === 'accuracy') {
+        const accA = a.totalQuestions > 0 ? (a.correctAnswers / a.totalQuestions) : 0;
+        const accB = b.totalQuestions > 0 ? (b.correctAnswers / b.totalQuestions) : 0;
+        // 1. Compara a precisão. Se for diferente, ordena.
+        if (accB !== accA) {
+            return accB - accA;
+        }
+        // 2. Se a precisão for igual, usa a PONTUAÇÃO como desempate.
+        return b.score - a.score;
+      }
+      
+      return 0; // Caso padrão
     });
   }, [results, selectedGame, sortBy]);
 
@@ -58,7 +85,6 @@ const Rankings = ({ results, games }) => {
                 className="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white w-full sm:w-auto"
               >
                 <option value="all">Todos os Jogos</option>
-                {/* O dropdown de jogos continua igual, usando a lista 'games' */}
                 {games.map(game => (
                   <option key={game._id} value={game._id}>
                     {game.title}
@@ -84,20 +110,19 @@ const Rankings = ({ results, games }) => {
             {filteredResults.slice(0, 10).map((result, index) => {
               const accuracy = getAccuracy(result);
               return (
-                <div key={result._id} className={`border rounded-md p-3 ${index < 3 ? 'border-purple-300 bg-purple-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div key={result._id || index} className={`border rounded-md p-3 ${index < 3 ? 'border-purple-300 bg-purple-50' : 'border-gray-200 bg-gray-50'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center justify-center w-8">{getRankIcon(index)}</div>
                       <div>
                         <h4 className="text-sm font-semibold text-gray-700">{result.playerName}</h4>
-                        {/* CORREÇÃO: Usa o título que vem do backend */}
-                        <p className="text-xs text-gray-500">{result.gameDetails.title}</p>
+                        <p className="text-xs text-gray-500">{result.gameDetails?.title || 'Jogo desconhecido'}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3 text-xs">
                       <div className="text-center"><div className="font-semibold text-yellow-600">{result.score}</div><div className="text-gray-500">Pts</div></div>
                       <div className="text-center hidden sm:block"><div className="font-semibold text-green-600">{accuracy}%</div><div className="text-gray-500">OK</div></div>
-                      <div className="text-center hidden md:block"><div className="font-semibold text-blue-600">{formatTime(result.timeSpent)}</div><div className="text-gray-500">Tempo</div></div>
+                      <div className="text-center"><div className="font-semibold text-blue-600">{formatTime(result.timeSpent)}</div><div className="text-gray-500">Tempo</div></div>
                     </div>
                   </div>
                 </div>
