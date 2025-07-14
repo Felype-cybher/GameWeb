@@ -8,6 +8,7 @@ import { AlertTriangle, PlusCircle, X } from 'lucide-react';
 
 const GameCreator = ({ onCreateGame, onCancel }) => {
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState(''); // <-- Adicionado
   const [gameType, setGameType] = useState('memory');
   const [pairs, setPairs] = useState([{ term: '', definition: '' }]);
   const [isPublic, setIsPublic] = useState(true);
@@ -29,13 +30,14 @@ const GameCreator = ({ onCreateGame, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title || pairs.some(p => !p.term || !p.definition)) {
-      alert('Por favor, preencha o título e todos os campos de termos e definições.');
+    if (!title || !description || pairs.some(p => !p.term || !p.definition)) {
+      alert('Por favor, preencha o título, a descrição e todos os campos de termos e definições.');
       return;
     }
 
     const gameData = {
       title,
+      description, // <-- Adicionado
       gameType,
       isPublic,
       data: {
@@ -52,6 +54,12 @@ const GameCreator = ({ onCreateGame, onCancel }) => {
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-medium">Título do Jogo</Label>
           <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Capitais do Brasil" required />
+        </div>
+        
+        {/* MODIFICAÇÃO AQUI: Novo campo de descrição */}
+        <div className="space-y-2">
+          <Label htmlFor="description" className="text-sm font-medium">Descrição</Label>
+          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Um quiz para testar seus conhecimentos" required />
         </div>
 
         <div className="space-y-2">

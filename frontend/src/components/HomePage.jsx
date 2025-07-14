@@ -42,8 +42,9 @@ const GameCard = ({ game, onPlay, onShare }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-gray-600 line-clamp-2">
-          Um desafio de {game.gameType === 'memory' ? 'memória' : game.gameType === 'quiz' ? 'conhecimento' : 'associação'} para testar suas habilidades.
+        {/* MODIFICAÇÃO AQUI: A classe "line-clamp-2" foi removida */}
+        <p className="text-sm text-gray-600">
+          {game.description || `Um desafio de ${game.gameType} para testar suas habilidades.`}
         </p>
       </CardContent>
       <CardFooter className="flex-col space-y-2 items-stretch pt-4">

@@ -31,10 +31,12 @@ router.get('/my-games', verificarToken, async (req, res) => {
 
 router.post('/', verificarToken, async (req, res) => {
     const gamesCollection = req.app.locals.gamesCollection;
-    const { title, gameType, data, createdBy, isPublic } = req.body;
+    // MODIFICAÇÃO AQUI: Adicionamos 'description'
+    const { title, description, gameType, data, createdBy, isPublic } = req.body;
 
     const gameDocument = {
         title,
+        description, // <-- Adicionado
         gameType,
         data,
         createdBy,
