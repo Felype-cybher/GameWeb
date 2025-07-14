@@ -41,7 +41,7 @@ const DragDropGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, set
 
   const handleDragStart = (e, item) => {
     setDraggedItem(item);
-    e.dataTransfer.setData('text/plain', item.id); // Necessário para Firefox
+    e.dataTransfer.setData('text/plain', item.id);
   };
 
   const handleDragOver = (e) => {
@@ -64,17 +64,17 @@ const DragDropGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, set
           : cat
       ));
       onCorrectAnswer(10);
-      toast({ title: "Certo!", description: `${draggedItem.name} na categoria ${targetCategoryName}.` });
+      // REMOVIDO: toast({ title: "Certo!", ... });
 
       const allPlaced = items.every(item => item.id === draggedItem.id || item.isPlaced);
       if (allPlaced) {
         setGameCompleted(true);
-        const totalCorrect = items.filter(i => i.category === categories.find(c => c.itemsInZone.some(cz => cz.id === i.id))?.name).length;
+        const totalCorrect = items.filter(i => i.isPlaced).length;
         onGameEnd(totalCorrect * 10, totalCorrect, items.length);
       }
     } else {
       onWrongAnswer();
-      toast({ title: "Errado!", description: `${draggedItem.name} não vai em ${targetCategoryName}.`, variant: "destructive" });
+      // REMOVIDO: toast({ title: "Errado!", ... });
     }
     setDraggedItem(null);
   };

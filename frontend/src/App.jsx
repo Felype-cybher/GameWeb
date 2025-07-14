@@ -1,10 +1,8 @@
-// frontend/src/App.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Play, Plus, Trophy, User, Home, Brain, KeyRound } from 'lucide-react';
+import { Brain, KeyRound, LogOut, Home, Plus, Trophy } from 'lucide-react';
 import HomePage from '@/components/HomePage';
 import GameCreator from '@/components/GameCreator';
 import GamePlayer from '@/components/GamePlayer';
@@ -15,46 +13,73 @@ import ChangePassword from '@/components/ChangePassword';
 function App() {
   const [currentView, setCurrentView] = useState('loading');
   const [currentPlayer, setCurrentPlayer] = useState(null);
-  const [games, setGames] = useState([]);
+  const [publicGames, setPublicGames] = useState([]);
+  const [myGames, setMyGames] = useState([]);
   const [gameResults, setGameResults] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
   const { toast } = useToast();
 
   const fetchAllData = useCallback(async () => {
-    try {
-      const [gamesRes, resultsRes] = await Promise.all([
-        fetch('http://localhost:3001/api/games'),
-        fetch('http://localhost:3001/api/results')
-      ]);
-      const gamesData = await gamesRes.json();
-      const resultsData = await resultsRes.json();
-      setGames(gamesData);
-      setGameResults(resultsData);
-    } catch (error) {
-      console.error("Erro ao buscar dados iniciais:", error);
+    const token = localStorage.getItem('token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-  }, []);
+
+    try {
+      const publicGamesRes = await fetch('http://localhost:3001/api/games');
+      if (publicGamesRes.ok) {
+        const publicGamesData = await publicGamesRes.json();
+        setPublicGames(publicGamesData);
+      } else {
+        console.error("Falha ao buscar jogos públicos");
+      }
+
+      if (token) {
+        const myGamesRes = await fetch('http://localhost:3001/api/games/my-games', { headers });
+        if (myGamesRes.ok) {
+          const myGamesData = await myGamesRes.json();
+          setMyGames(myGamesData);
+        } else {
+          console.error("Falha ao buscar meus jogos (sessão pode ter expirado)");
+          setMyGames([]);
+        }
+      }
+
+      const resultsRes = await fetch('http://localhost:3001/api/results');
+      if (resultsRes.ok) {
+        const resultsData = await resultsRes.json();
+        setGameResults(resultsData);
+      } else {
+        console.error("Falha ao buscar resultados");
+      }
+
+    } catch (error) {
+      console.error("Erro de rede ao buscar dados:", error);
+      toast({ title: "Erro de Rede", description: "Não foi possível carregar os dados do servidor.", variant: "destructive" });
+    }
+  }, [toast]);
 
   useEffect(() => {
     const initializeApp = async () => {
       const path = window.location.pathname;
       const gameIdMatch = path.match(/^\/jogar\/([a-fA-F0-9]{24})$/);
-
-      await fetchAllData();
-
       const savedPlayer = localStorage.getItem('currentPlayer');
       const token = localStorage.getItem('token');
       const player = savedPlayer ? JSON.parse(savedPlayer) : null;
       
       setCurrentPlayer(player);
+      
+      if (player && token) {
+        await fetchAllData();
+      }
 
       if (gameIdMatch) {
           const gameId = gameIdMatch[1];
           try {
               const res = await fetch(`http://localhost:3001/api/games/${gameId}`);
-              if (!res.ok) throw new Error('Jogo não encontrado');
+              if (!res.ok) throw new Error('Jogo não encontrado ou privado.');
               const gameFromUrl = await res.json();
-              
               setSelectedGame(gameFromUrl);
               setCurrentView(player && token ? 'play' : 'auth'); 
           } catch (error) {
@@ -75,20 +100,28 @@ function App() {
       setCurrentView('auth');
       return;
     }
-    const createdBy = currentPlayer.nome || 'Anônimo';
+
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:3001/api/games', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...gameData, createdBy })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          ...gameData,
+          createdBy: currentPlayer.nome,
+        })
       });
-      if (!response.ok) throw new Error('Erro ao salvar o jogo');
-      const newGameFromDB = await response.json();
-      setGames(prevGames => [newGameFromDB, ...prevGames]);
-      toast({ title: "Jogo criado!", description: `O jogo "${gameData.title}" foi salvo.` });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar o jogo');
+      }
+      
+      await fetchAllData();
+      toast({ title: "Jogo criado!", description: `O jogo "${gameData.title}" foi salvo com sucesso.` });
       setCurrentView('home');
     } catch (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao Criar Jogo", description: error.message, variant: "destructive" });
     }
   };
 
@@ -104,30 +137,29 @@ function App() {
   const handleGameComplete = async (result) => {
     const gameId = selectedGame._id;
     const resultData = {
-      playerName: currentPlayer.nome,
       score: result.score,
       timeSpent: result.timeSpent,
       correctAnswers: result.correctAnswers,
       totalQuestions: result.totalQuestions,
     };
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:3001/api/games/${gameId}/results`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(resultData),
       });
       if (!response.ok) throw new Error('Falha ao salvar o resultado.');
-      const resultsRes = await fetch('http://localhost:3001/api/results');
-      const updatedResults = await resultsRes.json();
-      setGameResults(updatedResults);
+      await fetchAllData();
       toast({ title: "Jogo Concluído!", description: `Sua pontuação foi salva.` });
     } catch (error) {
       toast({ title: "Erro", description: "Não foi possível salvar sua pontuação.", variant: "destructive" });
     }
   };
 
-  const handleAuthSuccess = (playerData) => {
+  const handleAuthSuccess = async (playerData) => {
     setCurrentPlayer(playerData);
+    await fetchAllData();
     if (selectedGame) {
       setCurrentView('play');
     } else {
@@ -136,8 +168,13 @@ function App() {
   };
   
   const handleLogout = () => {
+    localStorage.removeItem('currentPlayer');
+    localStorage.removeItem('token');
     setCurrentPlayer(null);
     setSelectedGame(null);
+    setPublicGames([]);
+    setMyGames([]);
+    setGameResults([]);
     window.history.replaceState({}, '', '/');
     setCurrentView('auth');
     toast({ title: "Até logo!", description: "Você saiu da sua conta." });
@@ -147,7 +184,6 @@ function App() {
     { id: 'home', label: 'Início', icon: Home },
     { id: 'create', label: 'Criar Jogo', icon: Plus },
     { id: 'rankings', label: 'Rankings', icon: Trophy },
-    { id: 'changePassword', label: 'Alterar Senha', icon: KeyRound },
   ];
   
   if (currentView === 'loading') {
@@ -171,13 +207,18 @@ function App() {
               <Brain className="h-10 w-10" />
               <div>
                 <h1 className="text-2xl font-bold">Jogos Educativos</h1>
-                <p className="text-sm text-purple-200">Aprenda brincando!</p>
+                <p className="text-sm text-purple-200">Aprenda brincando, {currentPlayer.nome}!</p>
               </div>
             </div>
             {currentPlayer && (
-              <Button variant="ghost" onClick={handleLogout}>
-                <User className="h-4 w-4 mr-2" /> Sair ({currentPlayer.nome})
-              </Button>
+              <div className="flex items-center space-x-2">
+                 <Button variant="ghost" onClick={() => setCurrentView('changePassword')}>
+                  <KeyRound className="h-4 w-4 mr-2" /> Alterar Senha
+                </Button>
+                <Button variant="ghost" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" /> Sair
+                </Button>
+              </div>
             )}
           </div>
         </header>
@@ -185,23 +226,16 @@ function App() {
         {currentView !== 'play' && (
           <nav className="bg-white rounded-lg p-3 mb-8 shadow">
             <div className="flex justify-center space-x-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                return (
+              {navigation.map((item) => (
                   <Button
                     key={item.id}
                     onClick={() => setCurrentView(item.id)}
-                    variant={currentView === item.id ? "default" : "ghost"}
-                    className={`flex items-center space-x-1 px-4 py-2 rounded-md text-sm ${
-                      currentView === item.id
-                        ? 'bg-purple-500 text-white'
-                        : 'text-gray-700 hover:bg-purple-100'
-                    }`}
+                    variant={currentView === item.id ? "secondary" : "ghost"}
                   >
-                    <Icon className="h-4 w-4" /> <span>{item.label}</span>
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.label}
                   </Button>
-                );
-              })}
+                ))}
             </div>
           </nav>
         )}
@@ -209,10 +243,10 @@ function App() {
         <main>
           {currentView === 'home' && (
             <HomePage
-              games={games}
+              publicGames={publicGames}
+              myGames={myGames}
               onPlayGame={handlePlayGame}
               onCreateGame={() => setCurrentView('create')}
-              currentPlayer={currentPlayer}
             />
           )}
           {currentView === 'create' && (
@@ -234,7 +268,7 @@ function App() {
             />
           )}
           {currentView === 'rankings' && (
-            <Rankings results={gameResults} games={games} />
+            <Rankings results={gameResults} games={[...publicGames, ...myGames]} />
           )}
           {currentView === 'changePassword' && (
             <ChangePassword 

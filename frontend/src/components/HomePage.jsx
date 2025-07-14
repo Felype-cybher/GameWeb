@@ -1,11 +1,67 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  Play, Plus, Brain, Target, Shuffle, Clock, User, Trophy, Lightbulb, Share2
-} from 'lucide-react';
+import { BrainCircuit, HelpCircle, Link2, Gamepad2, Search, Play, Plus, User, Lock, Share2 } from 'lucide-react';
 
-const HomePage = ({ games, onPlayGame, onCreateGame, currentPlayer }) => {
+const GameCard = ({ game, onPlay, onShare }) => {
+  const getGameTypeInfo = (type) => {
+    switch (type) {
+      case 'memory':
+        return { label: 'Memória', Icon: BrainCircuit, color: 'text-purple-500', bgColor: 'bg-purple-100' };
+      case 'quiz':
+        return { label: 'Quiz', Icon: HelpCircle, color: 'text-green-500', bgColor: 'bg-green-100' };
+      case 'association':
+        return { label: 'Associação', Icon: Link2, color: 'text-blue-500', bgColor: 'bg-blue-100' };
+      default:
+        return { label: 'Jogo', Icon: Gamepad2, color: 'text-gray-500', bgColor: 'bg-gray-100' };
+    }
+  };
+
+  const { label, Icon, color, bgColor } = getGameTypeInfo(game.gameType);
+
+  return (
+    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-grow pr-2">
+            <CardTitle className="text-lg font-semibold text-gray-800 mb-1.5">{game.title}</CardTitle>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${color} ${bgColor}`}>
+              {label}
+            </span>
+          </div>
+          <div className="flex-shrink-0">
+            <Icon className={`h-8 w-8 ${color}`} />
+          </div>
+        </div>
+        <CardDescription className="flex items-center text-xs text-gray-500 pt-3">
+          <User className="h-3 w-3 mr-1.5"/>
+          Criado por {game.createdBy}
+          {!game.isPublic && <Lock className="h-3 w-3 ml-2 text-gray-400" />}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <p className="text-sm text-gray-600 line-clamp-2">
+          Um desafio de {game.gameType === 'memory' ? 'memória' : game.gameType === 'quiz' ? 'conhecimento' : 'associação'} para testar suas habilidades.
+        </p>
+      </CardContent>
+      <CardFooter className="flex-col space-y-2 items-stretch pt-4">
+        <Button onClick={() => onPlay(game)} className="w-full bg-purple-600 hover:bg-purple-700">
+          <Play className="h-4 w-4 mr-2"/>
+          Jogar
+        </Button>
+        <Button onClick={() => onShare(game._id)} variant="outline" size="sm">
+          <Share2 className="h-4 w-4 mr-2" />
+          Compartilhar
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
+const HomePage = ({ publicGames, myGames, onPlayGame, onCreateGame }) => {
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   const handleShare = (gameId) => {
@@ -17,74 +73,69 @@ const HomePage = ({ games, onPlayGame, onCreateGame, currentPlayer }) => {
     });
   };
 
-  const gameTypeIcons = { association: Lightbulb, memory: Brain, quiz: Target };
-  const gameTypeLabels = { association: 'Associação', memory: 'Jogo da Memória', quiz: 'Quiz' };
+  const filteredPublicGames = useMemo(() => {
+    if (!searchTerm) {
+      return publicGames;
+    }
+    return publicGames.filter(game =>
+      game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      game.gameType.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [publicGames, searchTerm]);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg p-6 text-center shadow">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-2">
-          Bem-vindo, {currentPlayer?.nome || 'Jogador'}!
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Escolha um jogo para começar ou crie o seu.
-        </p>
-        <Button onClick={onCreateGame} size="lg" className="bg-purple-500 hover:bg-purple-600 text-white">
-          <Plus className="h-5 w-5 mr-2" />
-          Criar Novo Jogo
-        </Button>
-      </div>
+    <div className="space-y-8">
       <div>
-        <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-          <Trophy className="h-6 w-6 mr-2 text-yellow-500" />
-          Jogos Disponíveis ({games.length})
-        </h3>
-        {games.length === 0 ? (
-          <div className="bg-white rounded-lg p-8 text-center shadow">
-            <h4 className="text-lg font-medium text-gray-700 mb-1">Nenhum jogo por aqui...</h4>
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Buscar por título ou tipo de jogo..."
+            className="w-full pl-10 pr-4 py-2 text-md"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-700 mb-4">Jogos Públicos</h2>
+        {filteredPublicGames.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredPublicGames.map(game => (
+              <GameCard key={game._id} game={game} onPlay={onPlayGame} onShare={handleShare} />
+            ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {games.map((game) => {
-              const IconComponent = gameTypeIcons[game.gameType];
-              const label = gameTypeLabels[game.gameType];
-              return (
-                <div key={game._id} className="bg-white rounded-lg p-4 shadow hover:shadow-lg flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="bg-purple-500 p-2 rounded-md">
-                        {IconComponent && <IconComponent className="h-5 w-5 text-white" />}
-                      </div>
-                      <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full font-medium">
-                        {label || 'Jogo'}
-                      </span>
-                    </div>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-1 truncate">{game.title}</h4>
-                    <p className="text-gray-600 text-sm mb-3 h-10 overflow-hidden">{game.description}</p>
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                      <div className="flex items-center"><User className="h-3 w-3 mr-1" /><span>{game.createdBy}</span></div>
-                      <div className="flex items-center"><Clock className="h-3 w-3 mr-1" /><span>{new Date(game.createdAt).toLocaleDateString()}</span></div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col space-y-2 mt-4">
-                    <Button onClick={() => onPlayGame(game)} className="w-full bg-green-500 hover:bg-green-600 text-white">
-                      <Play className="h-4 w-4 mr-1" />
-                      Jogar
-                    </Button>
-                    <Button onClick={() => handleShare(game._id)} variant="outline" size="sm" className="w-full text-xs">
-                      <Share2 className="h-3 w-3 mr-1" />
-                      Compartilhar
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="text-center py-10 px-6 bg-gray-50 rounded-lg">
+            <BrainCircuit className="mx-auto h-12 w-12 text-gray-400"/>
+            <h3 className="mt-2 text-lg font-medium text-gray-900">Nenhum Jogo Público Encontrado</h3>
+            <p className="mt-1 text-sm text-gray-500">Tente uma busca diferente ou crie você mesmo um jogo novo!</p>
           </div>
         )}
       </div>
+
+      {myGames.length > 0 && (
+         <div>
+            <h2 className="text-2xl font-bold text-gray-700 mb-4">Meus Jogos</h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {myGames.map(game => (
+                <GameCard key={game._id} game={game} onPlay={onPlayGame} onShare={handleShare} />
+              ))}
+            </div>
+         </div>
+      )}
+
+      {myGames.length === 0 && (
+         <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
+           <h3 className="text-lg font-medium text-gray-900">Você ainda não criou nenhum jogo</h3>
+           <p className="mt-1 text-sm text-gray-500">Que tal começar agora?</p>
+            <Button onClick={onCreateGame} className="mt-4">
+              <Plus className="h-4 w-4 mr-2"/>
+              Criar Meu Primeiro Jogo
+            </Button>
+         </div>
+      )}
     </div>
   );
 };
 
 export default HomePage;
-//             setCurrentView('home');

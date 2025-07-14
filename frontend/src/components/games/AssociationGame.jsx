@@ -15,7 +15,6 @@ const AssociationGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, 
   useEffect(() => {
     const pairs = gameData.termsAndDefinitions || [];
     setTotalQuestions(pairs.length);
-    // Embaralha as perguntas ao iniciar o jogo
     setQuestions(pairs.sort(() => Math.random() - 0.5));
     setCurrentQuestionIndex(0);
     setUserAnswer('');
@@ -29,23 +28,18 @@ const AssociationGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, 
     if (isAnswered) return;
 
     const currentQuestion = questions[currentQuestionIndex];
-    // Compara as respostas ignorando maiúsculas/minúsculas e espaços extras
     const correctAnswer = currentQuestion.definition.trim().toLowerCase();
     const userAnswerClean = userAnswer.trim().toLowerCase();
 
     if (userAnswerClean === correctAnswer) {
       setWasCorrect(true);
       setLocalCorrectCount(prev => prev + 1);
-      onCorrectAnswer(25); // Pontuação maior por ser mais difícil
-      toast({ title: "Correto!", description: "Você acertou em cheio!" });
+      onCorrectAnswer(25);
+      // REMOVIDO: toast({ title: "Correto!", description: "Você acertou em cheio!" });
     } else {
       setWasCorrect(false);
       onWrongAnswer();
-      toast({
-        title: "Quase lá!",
-        description: `A resposta correta era: "${currentQuestion.definition}"`,
-        variant: "destructive"
-      });
+      // REMOVIDO: toast({ title: "Quase lá!", ... });
     }
     setIsAnswered(true);
   };
@@ -57,8 +51,7 @@ const AssociationGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, 
       setIsAnswered(false);
       setWasCorrect(false);
     } else {
-      // Fim de jogo
-      onGameEnd(null, localCorrectCount, questions.length); // Envia os resultados para o App.jsx
+      onGameEnd(null, localCorrectCount, questions.length);
     }
   };
 

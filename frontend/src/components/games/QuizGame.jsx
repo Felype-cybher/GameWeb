@@ -6,7 +6,7 @@ import { ChevronRight, RotateCcw, AlertTriangle } from 'lucide-react';
 const QuizGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, setTotalQuestions }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [questions, setQuestions] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null); // Index da opção selecionada
+  const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [localCorrectAnswers, setLocalCorrectAnswers] = useState(0);
   const { toast } = useToast();
@@ -19,7 +19,7 @@ const QuizGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, setTota
     const pairs = gameData.termsAndDefinitions || [];
     setTotalQuestions(pairs.length);
     
-    if (pairs.length < 2) { // Precisa de pelo menos 2 pares para ter alternativas
+    if (pairs.length < 2) {
       setQuestions([]);
       return;
     }
@@ -29,7 +29,7 @@ const QuizGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, setTota
         .filter((_, i) => i !== index) 
         .map(p => p.definition)
         .sort(() => 0.5 - Math.random()) 
-        .slice(0, Math.min(3, pairs.length - 1)); // Máximo 3 alternativas incorretas
+        .slice(0, Math.min(3, pairs.length - 1));
       
       const options = [pair.definition, ...incorrectOptions].sort(() => 0.5 - Math.random());
       
@@ -57,10 +57,10 @@ const QuizGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, setTota
     if (option === currentQ.correctAnswer) {
       setLocalCorrectAnswers(prev => prev + 1);
       onCorrectAnswer(15);
-      toast({ title: "Correto!", description: "Mandou bem!" });
+      // REMOVIDO: toast({ title: "Correto!", description: "Mandou bem!" });
     } else {
       onWrongAnswer();
-      toast({ title: "Errado!", description: `A resposta era: ${currentQ.correctAnswer}`, variant: "destructive" });
+      // REMOVIDO: toast({ title: "Errado!", ... });
     }
   };
 
@@ -94,7 +94,6 @@ const QuizGame = ({ gameData, onCorrectAnswer, onWrongAnswer, onGameEnd, setTota
   if (questions.length === 0) {
     return <div className="bg-white rounded-lg p-4 md:p-6 shadow text-center text-gray-500">Carregando Quiz...</div>;
   }
-
 
   const question = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;

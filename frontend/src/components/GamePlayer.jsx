@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-// 1. IMPORTAÇÕES CORRIGIDAS ABAIXO
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Trophy, Timer, CheckCircle, Flame } from 'lucide-react'; // Ícones atualizados
 
 // Importa todos os componentes de jogo
 import MemoryGame from '@/components/games/MemoryGame';
@@ -109,10 +108,10 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
         </h2>
         <p className="text-gray-600 mb-6">{getPerformanceMessage()}</p>
         <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
-          <div className="bg-gray-100 rounded-md p-3"><div className="font-semibold text-gray-700">{score}</div><div className="text-gray-500">Pontos</div></div>
+          {/* --- ALTERADO: Removi a exibição de pontos na tela final --- */}
           <div className="bg-gray-100 rounded-md p-3"><div className="font-semibold text-gray-700">{correctAnswers}/{totalQuestions}</div><div className="text-gray-500">Acertos</div></div>
           <div className="bg-gray-100 rounded-md p-3"><div className="font-semibold text-gray-700">{formatTime(timeSpent)}</div><div className="text-gray-500">Tempo</div></div>
-          <div className="bg-gray-100 rounded-md p-3"><div className="font-semibold text-gray-700">{totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0}%</div><div className="text-gray-500">Precisão</div></div>
+          <div className="bg-gray-100 rounded-md p-3 col-span-2"><div className="font-semibold text-gray-700">{totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0}%</div><div className="text-gray-500">Precisão</div></div>
         </div>
         <div className="flex justify-center space-x-3">
           <Button onClick={restartGame} className="bg-blue-500 hover:bg-blue-600 text-white px-5 text-sm"><RotateCcw className="h-4 w-4 mr-1" />Jogar de Novo</Button>
@@ -127,16 +126,28 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
     <div className="space-y-4">
       <div className="bg-white rounded-lg p-4 shadow">
         <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-800">{game.title}</h1>
+            <h1 className="text-xl font-semibold text-gray-800">{game.title}</h1>
             <Button onClick={onExit} variant="ghost" size="sm" className="text-gray-600 hover:bg-gray-100 p-1"><ArrowLeft className="h-5 w-5" /></Button>
         </div>
       </div>
-      <div className="bg-white rounded-lg p-3 shadow">
-        <div className="flex items-center justify-around text-xs">
-          <div className="text-center"><div className="font-semibold text-purple-600">{score}</div><div className="text-gray-500">Pontos</div></div>
-          <div className="text-center"><div className="font-semibold text-green-600">{correctAnswers}/{totalQuestions || '?'}</div><div className="text-gray-500">Acertos</div></div>
-          <div className="text-center"><div className="font-semibold text-blue-600">{formatTime(timeSpent)}</div><div className="text-gray-500">Tempo</div></div>
-          {streak > 0 && (<div className="text-center"><div className="font-semibold text-orange-500">🔥 {streak}x</div><div className="text-gray-500">Combo</div></div>)}
+      
+      {/* --- ALTERADO: Removi "Pontos" e aumentei o tamanho da fonte --- */}
+      <div className="bg-white rounded-lg p-4 shadow">
+        <div className="flex items-center justify-around text-center">
+          <div>
+            <div className="flex items-center justify-center text-lg font-bold text-green-600"><CheckCircle className="h-5 w-5 mr-1.5"/>{correctAnswers}/{totalQuestions || '?'}</div>
+            <div className="text-sm text-gray-500">Acertos</div>
+          </div>
+          <div>
+            <div className="flex items-center justify-center text-lg font-bold text-blue-600"><Timer className="h-5 w-5 mr-1.5"/>{formatTime(timeSpent)}</div>
+            <div className="text-sm text-gray-500">Tempo</div>
+          </div>
+          {streak > 1 && (
+            <div>
+              <div className="flex items-center justify-center text-lg font-bold text-orange-500"><Flame className="h-5 w-5 mr-1.5"/>{streak}x</div>
+              <div className="text-sm text-gray-500">Combo</div>
+            </div>
+          )}
         </div>
       </div>
       <div>{renderGameComponent()}</div>
