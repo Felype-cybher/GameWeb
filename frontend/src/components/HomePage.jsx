@@ -21,6 +21,10 @@ const GameCard = ({ game, onPlay, onShare }) => {
 
   const { label, Icon, color, bgColor } = getGameTypeInfo(game.gameType);
 
+  // --- MODIFICAÇÃO AQUI ---
+  // Define uma descrição padrão caso a do jogo não exista.
+  const defaultDescription = `Um desafio de ${game.gameType === 'memory' ? 'memória' : game.gameType === 'quiz' ? 'conhecimento' : 'associação'} para testar suas habilidades.`;
+
   return (
     <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300">
       <CardHeader>
@@ -42,9 +46,12 @@ const GameCard = ({ game, onPlay, onShare }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        {/* MODIFICAÇÃO AQUI: A classe "line-clamp-2" foi removida */}
+        {/*
+          A linha abaixo foi corrigida para usar 'game.description'.
+          A classe 'line-clamp-2' foi removida para exibir o texto completo.
+        */}
         <p className="text-sm text-gray-600">
-          {game.description || `Um desafio de ${game.gameType} para testar suas habilidades.`}
+          {game.description || defaultDescription}
         </p>
       </CardContent>
       <CardFooter className="flex-col space-y-2 items-stretch pt-4">
