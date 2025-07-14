@@ -1,14 +1,14 @@
-# 🎮 Plataforma de Jogos Educativos
+#  Plataforma de Jogos Educativos
 
 Um sistema web completo para a criação, compartilhamento e jogabilidade de jogos educativos, com sistema de usuários e ranking de pontuações.
 
-## 🌐 Tela Inicial do Projeto
+##  Tela Inicial do Projeto
 
 Abaixo, uma visão geral da página principal da aplicação após o login do usuário:
 
 ![Tela Inicial do Projeto de Jogos](telainicial.png)
 
-## 📝 Descrição do Projeto
+##  Descrição do Projeto
 
 Esta aplicação foi desenvolvida como projeto para a disciplina de Programação Web, visando criar uma plataforma interativa e funcional. O sistema permite que usuários se cadastrem, criem seus próprios jogos baseados em "Termos e Definições" e "Itens e Categorias", e joguem os games disponíveis.
 
@@ -16,7 +16,7 @@ O projeto foi construído com uma arquitetura moderna, separando o **backend** d
 
 ---
 
-## ✨ Funcionalidades
+##  Funcionalidades
 
 * **Gerenciamento de Usuários:**
   * Cadastro de novos usuários com senha criptografada.
@@ -40,7 +40,7 @@ O projeto foi construído com uma arquitetura moderna, separando o **backend** d
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+##  Tecnologias Utilizadas
 
 ### Backend
 
@@ -59,7 +59,7 @@ O projeto foi construído com uma arquitetura moderna, separando o **backend** d
 
 ---
 
-## 🚀 Como Instalar e Executar
+##  Como Instalar e Executar
 
 Siga os passos abaixo para executar o projeto em sua máquina.
 
