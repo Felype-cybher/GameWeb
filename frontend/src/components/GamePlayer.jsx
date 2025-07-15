@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Adicione useRef
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, RotateCcw, Trophy, Timer, CheckCircle, Flame } from 'lucide-react'; // Ícones atualizados
+import { ArrowLeft, RotateCcw, Trophy, Timer, CheckCircle, Flame } from 'lucide-react';
+
+// Importa o gerenciador de áudio
+import AudioManager from '@/components/AudioManager';
 
 // Importa todos os componentes de jogo
 import MemoryGame from '@/components/games/MemoryGame';
@@ -17,7 +20,11 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [startTime, setStartTime] = useState(Date.now());
   const [streak, setStreak] = useState(0);
+  // REMOVIDO: const [soundToPlay, setSoundToPlay] = useState(null);
   const { toast } = useToast();
+
+  // Crie uma referência para o AudioManager
+  const audioManagerRef = useRef(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -29,6 +36,8 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   }, [gameState, startTime]);
 
   const handleCorrectAnswer = (points = 10) => {
+    // Chama o som de acerto DIRETAMENTE
+    audioManagerRef.current?.playCorrect();
     setScore(prev => prev + points + (streak * 2));
     setCorrectAnswers(prev => prev + 1);
     const newStreak = streak + 1;
@@ -36,6 +45,8 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   };
 
   const handleWrongAnswer = () => {
+    // Chama o som de erro DIRETAMENTE
+    audioManagerRef.current?.playWrong();
     setStreak(0);
   };
 
@@ -87,6 +98,7 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
       onWrongAnswer: handleWrongAnswer,
       onGameEnd: handleGameEnd,
       setTotalQuestions
+      // REMOVIDO: onNextQuestion não é mais necessário para o som
     };
 
     switch (game.gameType) {
@@ -98,7 +110,6 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
     }
   };
 
-  // --- Tela de Resultados ---
   if (gameState === 'completed') {
     return (
       <div className="bg-white rounded-lg p-6 text-center shadow-md max-w-lg mx-auto">
@@ -108,7 +119,6 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
         </h2>
         <p className="text-gray-600 mb-6">{getPerformanceMessage()}</p>
         <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
-          {/* --- ALTERADO: Removi a exibição de pontos na tela final --- */}
           <div className="bg-gray-100 rounded-md p-3"><div className="font-semibold text-gray-700">{correctAnswers}/{totalQuestions}</div><div className="text-gray-500">Acertos</div></div>
           <div className="bg-gray-100 rounded-md p-3"><div className="font-semibold text-gray-700">{formatTime(timeSpent)}</div><div className="text-gray-500">Tempo</div></div>
           <div className="bg-gray-100 rounded-md p-3 col-span-2"><div className="font-semibold text-gray-700">{totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0}%</div><div className="text-gray-500">Precisão</div></div>
@@ -121,9 +131,11 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
     );
   }
 
-  // --- Tela de Jogo Principal ---
   return (
     <div className="space-y-4">
+      {/* Conecta a referência ao componente AudioManager */}
+      <AudioManager ref={audioManagerRef} />
+
       <div className="bg-white rounded-lg p-4 shadow">
         <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-gray-800">{game.title}</h1>
@@ -131,7 +143,6 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
         </div>
       </div>
       
-      {/* --- ALTERADO: Removi "Pontos" e aumentei o tamanho da fonte --- */}
       <div className="bg-white rounded-lg p-4 shadow">
         <div className="flex items-center justify-around text-center">
           <div>
