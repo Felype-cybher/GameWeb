@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,12 +6,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, PlusCircle, X } from 'lucide-react';
 
-const GameCreator = ({ onCreateGame, onCancel }) => {
+const GameCreator = ({ onCreateGame, onCancel, gameToEdit }) => {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState(''); // <-- Adicionado
+  const [description, setDescription] = useState('');
   const [gameType, setGameType] = useState('memory');
   const [pairs, setPairs] = useState([{ term: '', definition: '' }]);
   const [isPublic, setIsPublic] = useState(true);
+
+  useEffect(() => {
+    if (gameToEdit) {
+      setTitle(gameToEdit.title || '');
+      setDescription(gameToEdit.description || '');
+      setGameType(gameToEdit.gameType || 'memory');
+      setPairs(gameToEdit.data?.termsAndDefinitions || [{ term: '', definition: '' }]);
+      setIsPublic(gameToEdit.isPublic ?? true);
+    }
+  }, [gameToEdit]);
 
   const handlePairChange = (index, field, value) => {
     const newPairs = [...pairs];
@@ -24,6 +34,7 @@ const GameCreator = ({ onCreateGame, onCancel }) => {
   };
 
   const removePair = (index) => {
+    if (pairs.length <= 1) return;
     const newPairs = pairs.filter((_, i) => i !== index);
     setPairs(newPairs);
   };
@@ -37,26 +48,28 @@ const GameCreator = ({ onCreateGame, onCancel }) => {
 
     const gameData = {
       title,
-      description, // <-- Adicionado
+      description,
       gameType,
       isPublic,
       data: {
         termsAndDefinitions: pairs,
-      }
+      },
+      id: gameToEdit?._id
     };
     onCreateGame(gameData);
   };
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-md max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Criar Novo Jogo</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {gameToEdit ? 'Editar Jogo' : 'Criar Novo Jogo'}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-medium">Título do Jogo</Label>
           <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Capitais do Brasil" required />
         </div>
         
-        {/* MODIFICAÇÃO AQUI: Novo campo de descrição */}
         <div className="space-y-2">
           <Label htmlFor="description" className="text-sm font-medium">Descrição</Label>
           <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Um quiz para testar seus conhecimentos" required />
@@ -97,8 +110,8 @@ const GameCreator = ({ onCreateGame, onCancel }) => {
 
         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
            <Label htmlFor="is-public" className="text-sm font-medium text-blue-800">
-              Jogo Público?
-              <p className="text-xs text-blue-600">Jogos públicos aparecem para todos. Privados só para você.</p>
+             Jogo Público?
+             <p className="text-xs text-blue-600">Jogos públicos aparecem para todos. Privados só para você.</p>
            </Label>
            <Switch id="is-public" checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
@@ -112,7 +125,9 @@ const GameCreator = ({ onCreateGame, onCancel }) => {
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-          <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">Salvar Jogo</Button>
+          <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+            {gameToEdit ? 'Salvar Alterações' : 'Criar Jogo'}
+          </Button>
         </div>
       </form>
     </div>

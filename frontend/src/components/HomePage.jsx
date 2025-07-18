@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { BrainCircuit, HelpCircle, Link2, Gamepad2, Search, Play, Plus, User, Lock, Share2 } from 'lucide-react';
+import { BrainCircuit, HelpCircle, Link2, Gamepad2, Search, Play, Plus, User, Lock, Share2, Edit, Trash2 } from 'lucide-react';
 
-const GameCard = ({ game, onPlay, onShare }) => {
+const GameCard = ({ game, onPlay, onShare, onEdit, onDelete, isMyGame }) => {
   const getGameTypeInfo = (type) => {
     switch (type) {
       case 'memory':
@@ -20,9 +20,6 @@ const GameCard = ({ game, onPlay, onShare }) => {
   };
 
   const { label, Icon, color, bgColor } = getGameTypeInfo(game.gameType);
-
-  // --- MODIFICAÇÃO AQUI ---
-  // Define uma descrição padrão caso a do jogo não exista.
   const defaultDescription = `Um desafio de ${game.gameType === 'memory' ? 'memória' : game.gameType === 'quiz' ? 'conhecimento' : 'associação'} para testar suas habilidades.`;
 
   return (
@@ -46,10 +43,6 @@ const GameCard = ({ game, onPlay, onShare }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        {/*
-          A linha abaixo foi corrigida para usar 'game.description'.
-          A classe 'line-clamp-2' foi removida para exibir o texto completo.
-        */}
         <p className="text-sm text-gray-600">
           {game.description || defaultDescription}
         </p>
@@ -59,16 +52,34 @@ const GameCard = ({ game, onPlay, onShare }) => {
           <Play className="h-4 w-4 mr-2"/>
           Jogar
         </Button>
-        <Button onClick={() => onShare(game._id)} variant="outline" size="sm">
-          <Share2 className="h-4 w-4 mr-2" />
-          Compartilhar
-        </Button>
+        
+        {isMyGame ? (
+          <div className="grid grid-cols-3 gap-2 w-full">
+            <Button onClick={() => onShare(game._id)} variant="outline" size="sm" className="w-full whitespace-nowrap">
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartilhar
+            </Button>
+            <Button onClick={() => onEdit(game)} variant="outline" size="sm" className="w-full whitespace-nowrap">
+                <Edit className="h-4 w-4 mr-2"/>
+                Editar
+            </Button>
+            <Button onClick={() => onDelete(game._id)} variant="destructive" size="sm" className="w-full whitespace-nowrap">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={() => onShare(game._id)} variant="outline" size="sm" className="w-full">
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
 };
 
-const HomePage = ({ publicGames, myGames, onPlayGame, onCreateGame }) => {
+const HomePage = ({ publicGames, myGames, onPlayGame, onCreateGame, onEditGame, onDeleteGame }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -109,7 +120,7 @@ const HomePage = ({ publicGames, myGames, onPlayGame, onCreateGame }) => {
         {filteredPublicGames.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredPublicGames.map(game => (
-              <GameCard key={game._id} game={game} onPlay={onPlayGame} onShare={handleShare} />
+              <GameCard key={game._id} game={game} onPlay={onPlayGame} onShare={handleShare} isMyGame={false} />
             ))}
           </div>
         ) : (
@@ -123,16 +134,24 @@ const HomePage = ({ publicGames, myGames, onPlayGame, onCreateGame }) => {
 
       {myGames.length > 0 && (
          <div>
-            <h2 className="text-2xl font-bold text-gray-700 mb-4">Meus Jogos</h2>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {myGames.map(game => (
-                <GameCard key={game._id} game={game} onPlay={onPlayGame} onShare={handleShare} />
-              ))}
-            </div>
+           <h2 className="text-2xl font-bold text-gray-700 mb-4">Meus Jogos</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+             {myGames.map(game => (
+               <GameCard 
+                key={game._id} 
+                game={game} 
+                onPlay={onPlayGame} 
+                onShare={handleShare} 
+                onEdit={onEditGame} 
+                onDelete={onDeleteGame} 
+                isMyGame={true} 
+               />
+             ))}
+           </div>
          </div>
       )}
 
-      {myGames.length === 0 && (
+      {myGames.length === 0 && publicGames.length === 0 && (
          <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
            <h3 className="text-lg font-medium text-gray-900">Você ainda não criou nenhum jogo</h3>
            <p className="mt-1 text-sm text-gray-500">Que tal começar agora?</p>

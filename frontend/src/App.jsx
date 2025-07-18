@@ -94,17 +94,20 @@ function App() {
     initializeApp();
   }, [toast, fetchAllData]);
 
-  const handleCreateGame = async (gameData) => {
+  const handleSaveGame = async (gameData) => {
     if (!currentPlayer) {
-      toast({ title: "Acesso Negado", description: "Faça o login para criar um jogo.", variant: "destructive" });
-      setCurrentView('auth');
+      toast({ title: "Acesso Negado", description: "Faça o login para salvar um jogo.", variant: "destructive" });
       return;
     }
 
+    const token = localStorage.getItem('token');
+    const isEditing = !!gameData.id;
+    const url = isEditing ? `http://localhost:3001/api/games/${gameData.id}` : 'http://localhost:3001/api/games';
+    const method = isEditing ? 'PUT' : 'POST';
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/games', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           ...gameData,
@@ -118,10 +121,42 @@ function App() {
       }
       
       await fetchAllData();
-      toast({ title: "Jogo criado!", description: `O jogo "${gameData.title}" foi salvo com sucesso.` });
+      toast({ title: "Sucesso!", description: `O jogo "${gameData.title}" foi salvo.` });
       setCurrentView('home');
+      setSelectedGame(null);
+
     } catch (error) {
-      toast({ title: "Erro ao Criar Jogo", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao Salvar", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleEditGame = (game) => {
+    setSelectedGame(game);
+    setCurrentView('create');
+  };
+
+  const handleDeleteGame = async (gameId) => {
+    if (!window.confirm("Tem certeza que deseja excluir este jogo? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/games/${gameId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir o jogo');
+      }
+
+      await fetchAllData();
+      toast({ title: "Sucesso!", description: "O jogo foi excluído." });
+
+    } catch (error) {
+      toast({ title: "Erro ao Excluir", description: error.message, variant: "destructive" });
     }
   };
 
@@ -229,7 +264,10 @@ function App() {
               {navigation.map((item) => (
                   <Button
                     key={item.id}
-                    onClick={() => setCurrentView(item.id)}
+                    onClick={() => {
+                      setSelectedGame(null);
+                      setCurrentView(item.id);
+                    }}
                     variant={currentView === item.id ? "secondary" : "ghost"}
                   >
                     <item.icon className="h-4 w-4 mr-2" />
@@ -247,12 +285,18 @@ function App() {
               myGames={myGames}
               onPlayGame={handlePlayGame}
               onCreateGame={() => setCurrentView('create')}
+              onEditGame={handleEditGame}
+              onDeleteGame={handleDeleteGame}
             />
           )}
           {currentView === 'create' && (
             <GameCreator
-              onCreateGame={handleCreateGame}
-              onCancel={() => setCurrentView('home')}
+              onCreateGame={handleSaveGame}
+              onCancel={() => {
+                setCurrentView('home');
+                setSelectedGame(null);
+              }}
+              gameToEdit={selectedGame}
             />
           )}
           {currentView === 'play' && selectedGame && (
