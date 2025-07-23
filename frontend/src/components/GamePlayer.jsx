@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'; // Adicione useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, RotateCcw, Trophy, Timer, CheckCircle, Flame } from 'lucide-react';
 
-// Importa o gerenciador de áudio
 import AudioManager from '@/components/AudioManager';
 
-// Importa todos os componentes de jogo
 import MemoryGame from '@/components/games/MemoryGame';
 import QuizGame from '@/components/games/QuizGame';
 import DragDropGame from '@/components/games/DragDropGame';
 import AssociationGame from '@/components/games/AssociationGame';
+import HangmanGame from '@/components/games/HangmanGame'; // 1. IMPORTAR O NOVO JOGO
 
 const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   const [gameState, setGameState] = useState('playing'); 
@@ -20,10 +19,7 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   const [timeSpent, setTimeSpent] = useState(0);
   const [startTime, setStartTime] = useState(Date.now());
   const [streak, setStreak] = useState(0);
-  // REMOVIDO: const [soundToPlay, setSoundToPlay] = useState(null);
   const { toast } = useToast();
-
-  // Crie uma referência para o AudioManager
   const audioManagerRef = useRef(null);
 
   useEffect(() => {
@@ -36,7 +32,6 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   }, [gameState, startTime]);
 
   const handleCorrectAnswer = (points = 10) => {
-    // Chama o som de acerto DIRETAMENTE
     audioManagerRef.current?.playCorrect();
     setScore(prev => prev + points + (streak * 2));
     setCorrectAnswers(prev => prev + 1);
@@ -45,7 +40,6 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
   };
 
   const handleWrongAnswer = () => {
-    // Chama o som de erro DIRETAMENTE
     audioManagerRef.current?.playWrong();
     setStreak(0);
   };
@@ -65,6 +59,7 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
 
   const restartGame = () => {
     setGameState('restarting');
+    
     setTimeout(() => {
       setScore(0);
       setCorrectAnswers(0);
@@ -98,7 +93,6 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
       onWrongAnswer: handleWrongAnswer,
       onGameEnd: handleGameEnd,
       setTotalQuestions
-      // REMOVIDO: onNextQuestion não é mais necessário para o som
     };
 
     switch (game.gameType) {
@@ -106,6 +100,7 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
       case 'memory': return <MemoryGame key={startTime} {...commonProps} />;
       case 'quiz': return <QuizGame key={startTime} {...commonProps} />;
       case 'dragdrop': return <DragDropGame key={startTime} {...commonProps} />;
+      case 'hangman': return <HangmanGame key={startTime} {...commonProps} />; // 2. ADICIONAR O CASE PARA O JOGO
       default: return <div className="text-red-500 p-4 bg-red-100 rounded-md">Erro: Tipo de jogo desconhecido.</div>;
     }
   };
@@ -133,9 +128,7 @@ const GamePlayer = ({ game, player, onGameComplete, onExit }) => {
 
   return (
     <div className="space-y-4">
-      {/* Conecta a referência ao componente AudioManager */}
       <AudioManager ref={audioManagerRef} />
-
       <div className="bg-white rounded-lg p-4 shadow">
         <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-gray-800">{game.title}</h1>

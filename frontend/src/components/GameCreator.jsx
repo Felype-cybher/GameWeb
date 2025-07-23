@@ -4,130 +4,117 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { AlertTriangle, PlusCircle, X } from 'lucide-react';
+import WordListForm from './gamecreator/WordListForm'; // Formulário da Forca
+import ItemsCategoriesForm from './gamecreator/ItemsCategoriesForm'; // Formulário do Arrastar e Soltar
+import TermsDefinitionsForm from './gamecreator/TermsDefinitionsForm'; // Formulário Padrão
 
 const GameCreator = ({ onCreateGame, onCancel, gameToEdit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gameType, setGameType] = useState('memory');
-  const [pairs, setPairs] = useState([{ term: '', definition: '' }]);
   const [isPublic, setIsPublic] = useState(true);
+
+  // Estados para cada tipo de dados de jogo
+  const [pairs, setPairs] = useState([{ term: '', definition: '' }]);
+  const [wordList, setWordList] = useState([{ word: '', hint: '' }]);
+  const [itemsAndCategories, setItemsAndCategories] = useState({
+    items: [{ name: '', category: '' }],
+    categories: ['', ''],
+  });
 
   useEffect(() => {
     if (gameToEdit) {
       setTitle(gameToEdit.title || '');
       setDescription(gameToEdit.description || '');
       setGameType(gameToEdit.gameType || 'memory');
-      setPairs(gameToEdit.data?.termsAndDefinitions || [{ term: '', definition: '' }]);
       setIsPublic(gameToEdit.isPublic ?? true);
+
+      // Carrega os dados corretos dependendo do tipo de jogo a ser editado
+      if (gameToEdit.gameType === 'hangman') {
+        setWordList(gameToEdit.data?.wordList || [{ word: '', hint: '' }]);
+      } else if (gameToEdit.gameType === 'dragdrop') {
+        setItemsAndCategories(gameToEdit.data?.itemsAndCategories || { items: [{ name: '', category: '' }], categories: ['', ''] });
+      } else {
+        setPairs(gameToEdit.data?.termsAndDefinitions || [{ term: '', definition: '' }]);
+      }
     }
   }, [gameToEdit]);
 
-  const handlePairChange = (index, field, value) => {
-    const newPairs = [...pairs];
-    newPairs[index][field] = value;
-    setPairs(newPairs);
-  };
-
-  const addPair = () => {
-    setPairs([...pairs, { term: '', definition: '' }]);
-  };
-
-  const removePair = (index) => {
-    if (pairs.length <= 1) return;
-    const newPairs = pairs.filter((_, i) => i !== index);
-    setPairs(newPairs);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title || !description || pairs.some(p => !p.term || !p.definition)) {
-      alert('Por favor, preencha o título, a descrição e todos os campos de termos e definições.');
-      return;
+
+    let gameDataPayload = {};
+    if (gameType === 'hangman') {
+      if (!title || !description || wordList.some(item => !item.word || !item.hint)) {
+        alert('Por favor, preencha todos os campos, incluindo palavras e dicas.');
+        return;
+      }
+      gameDataPayload = { wordList };
+    } else if (gameType === 'dragdrop') {
+        if (!title || !description || itemsAndCategories.items.some(i => !i.name || !i.category) || itemsAndCategories.categories.some(c => !c)) {
+            alert('Por favor, preencha todos os campos, incluindo nomes de itens e categorias.');
+            return;
+        }
+        gameDataPayload = { itemsAndCategories };
+    } else {
+      if (!title || !description || pairs.some(p => !p.term || !p.definition)) {
+        alert('Por favor, preencha todos os campos de termos e definições.');
+        return;
+      }
+      gameDataPayload = { termsAndDefinitions: pairs };
     }
 
-    const gameData = {
-      title,
-      description,
-      gameType,
-      isPublic,
-      data: {
-        termsAndDefinitions: pairs,
-      },
-      id: gameToEdit?._id
-    };
+    const gameData = { title, description, gameType, isPublic, data: gameDataPayload, id: gameToEdit?._id };
     onCreateGame(gameData);
+  };
+
+  const renderGameSpecificForm = () => {
+    switch (gameType) {
+      case 'hangman':
+        return <WordListForm wordList={wordList} setWordList={setWordList} />;
+      case 'dragdrop':
+        return <ItemsCategoriesForm itemsAndCategories={itemsAndCategories} setItemsAndCategories={setItemsAndCategories} />;
+      default:
+        return <TermsDefinitionsForm termsAndDefinitions={pairs} setTermsAndDefinitions={setPairs} />;
+    }
   };
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-md max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {gameToEdit ? 'Editar Jogo' : 'Criar Novo Jogo'}
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">{gameToEdit ? 'Editar Jogo' : 'Criar Novo Jogo'}</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="title" className="text-sm font-medium">Título do Jogo</Label>
-          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Capitais do Brasil" required />
+          <Label htmlFor="title">Título do Jogo</Label>
+          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Capitais do Mundo" required />
         </div>
-        
         <div className="space-y-2">
-          <Label htmlFor="description" className="text-sm font-medium">Descrição</Label>
-          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Um quiz para testar seus conhecimentos" required />
+          <Label htmlFor="description">Descrição</Label>
+          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Teste seus conhecimentos de geografia" required />
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="gameType" className="text-sm font-medium">Tipo de Jogo</Label>
-          <Select value={gameType} onValueChange={setGameType}>
-            <SelectTrigger id="gameType">
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
+          <Label htmlFor="gameType">Tipo de Jogo</Label>
+          <Select value={gameType} onValueChange={setGameType} disabled={!!gameToEdit}>
+            <SelectTrigger id="gameType"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="memory">Jogo da Memória</SelectItem>
               <SelectItem value="quiz">Quiz</SelectItem>
               <SelectItem value="association">Associação</SelectItem>
+              <SelectItem value="hangman">Jogo da Forca</SelectItem>
+              <SelectItem value="dragdrop">Arrastar e Soltar</SelectItem>
             </SelectContent>
           </Select>
         </div>
-
-        <div>
-          <Label className="text-sm font-medium">Pares de Termos e Definições</Label>
-          <div className="space-y-3 mt-2">
-            {pairs.map((pair, index) => (
-              <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded-md">
-                <Input value={pair.term} onChange={(e) => handlePairChange(index, 'term', e.target.value)} placeholder={`Termo ${index + 1}`} required className="w-1/2"/>
-                <Input value={pair.definition} onChange={(e) => handlePairChange(index, 'definition', e.target.value)} placeholder={`Definição ${index + 1}`} required className="w-1/2"/>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removePair(index)} disabled={pairs.length === 1}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={addPair} className="mt-3">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Adicionar Par
-          </Button>
-        </div>
-
+        {renderGameSpecificForm()}
         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-           <Label htmlFor="is-public" className="text-sm font-medium text-blue-800">
-             Jogo Público?
-             <p className="text-xs text-blue-600">Jogos públicos aparecem para todos. Privados só para você.</p>
-           </Label>
-           <Switch id="is-public" checked={isPublic} onCheckedChange={setIsPublic} />
+          <Label htmlFor="is-public" className="text-sm font-medium text-blue-800">
+            Jogo Público?
+            <p className="text-xs text-blue-600">Públicos aparecem para todos. Privados só para você.</p>
+          </Label>
+          <Switch id="is-public" checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
-
-        {pairs.length < 2 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 rounded-md text-sm flex items-center">
-            <AlertTriangle className="h-5 w-5 mr-2"/>
-            Recomendamos criar pelo menos 2 pares para uma melhor experiência de jogo.
-          </div>
-        )}
-
         <div className="flex justify-end space-x-3 pt-4">
           <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-          <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
-            {gameToEdit ? 'Salvar Alterações' : 'Criar Jogo'}
-          </Button>
+          <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">{gameToEdit ? 'Salvar Alterações' : 'Criar Jogo'}</Button>
         </div>
       </form>
     </div>
